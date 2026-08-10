@@ -1,0 +1,27 @@
+plugins:
+  - source: modrinth
+    id: 'chunkful-vanish'
+    version: '1.2.1'
+    platform: 'paper'
+
+  - source: hangar
+    id: 'staffprofiles'
+    version: '1.0.1'
+    platform: 'paper'
+
+  - source: jenkins
+    host: 'https://ci.lucko.me'
+    job: 'LuckPerms'
+    build: '1658'
+    artifact: 'LuckPerms-Bukkit-5.5.71.jar'
+
+  - source: github-releases
+    repository: 'mcmdev/chatchannels'
+    version: '1.1'
+    artifact: 'chatchannels-*.jar'
+
+  - source: maven
+    host: 'https://repo1.maven.org/maven2/'
+    group: 'com.google.guava'
+    artifact: 'guava'
+    version: '[32.0,33.0)'
