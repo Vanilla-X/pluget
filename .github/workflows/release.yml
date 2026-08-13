@@ -1,0 +1,73 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: go build -o pluget ./cmd/pluget
+
+  release:
+    name: Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Cross-compile
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          targets=(
+            linux/amd64
+            linux/arm64
+            darwin/amd64
+            darwin/arm64
+            windows/amd64
+            windows/arm64
+          )
+          for target in "${targets[@]}"; do
+            os="${target%/*}"
+            arch="${target#*/}"
+            ext=""
+            if [[ "${os}" == windows ]]; then
+              ext=".exe"
+            fi
+            name="pluget-${os}-${arch}${ext}"
+            echo "Building ${name}"
+            GOOS="${os}" GOARCH="${arch}" CGO_ENABLED=0 \
+              go build -trimpath -ldflags='-s -w' -o "dist/${name}" ./cmd/pluget
+          done
+          (cd dist && sha256sum * > SHA256SUMS)
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
